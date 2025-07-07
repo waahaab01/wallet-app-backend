@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, verifyLoginOTP, sendResetOTP, verifyResetOTP, resetPassword } = require('../controllers/authController');
+const { registerUser, loginUser, verifyLoginOTP, sendResetOTP, verifyResetOTP, resetPassword, loginWithMnemonic, verifyLoginMnemonicOTP } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -15,5 +15,9 @@ router.post('/reset/send-otp', sendResetOTP);
 router.post('/reset/verify-otp', verifyResetOTP);
 // @route POST /api/auth/reset/password (reset password)
 router.post('/reset/password', resetPassword);
+// @route POST /api/auth/login-mnemonic (step 1: send OTP)
+router.post('/login-mnemonic', loginWithMnemonic);
+// @route POST /api/auth/login-mnemonic/verify-otp (step 2: verify OTP)
+router.post('/login-mnemonic/verify-otp', verifyLoginMnemonicOTP);
 
 module.exports = router;

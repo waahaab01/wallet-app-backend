@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+    },
     // OTP fields for 2FA and password reset
     otp: {
       type: String,
@@ -35,7 +40,7 @@ const userSchema = new mongoose.Schema(
     },
     otpType: {
       type: String,
-      enum: ['login', 'reset', null],
+      enum: ['login', 'reset', 'login-mnemonic', null],
       default: null
     },
     createdAt: {

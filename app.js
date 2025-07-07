@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const walletRoutes = require('./routes/walletRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { errorHandler } = require('./middlewares/errorMiddleware');
 
 
@@ -24,6 +25,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/wallets', walletRoutes);
+app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
 module.exports = app;
