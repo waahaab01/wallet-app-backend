@@ -11,12 +11,26 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendMail = async ({ to, subject, html }) => {
-  return transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to,
-    subject,
-    html
-  });
+  try {
+    console.log('sendMail called with:', { to, subject });
+    if (!to || typeof to !== 'string' || !to.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      console.error('sendMail error: Invalid or missing email address:', to, typeof to, JSON.stringify(to));
+      console.trace('sendMail stack trace');
+      throw new Error('Invalid or missing email address');
+    }
+    const result = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to,
+      subject,
+      html
+    });
+    console.log('sendMail success:', result);
+    return result;
+  } catch (err) {
+    console.error('sendMail exception:', err);
+    console.trace('sendMail exception stack trace');
+    throw err;
+  }
 };
 
 const getTemplate = (templateName, variables) => {

@@ -6,14 +6,26 @@ const { encrypt } = require("../utils/encrypt");
 const { generateOTP } = require("../utils/otp");
 const { sendMail, getTemplate } = require("../utils/mailer");
 
+// Utility: Email validation
+const isValidEmail = (email) => {
+  if (!email || typeof email !== 'string') return false;
+  // Simple regex for email validation
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
 // Utility: Send real OTP email
 const sendOTP = async (email, otp, type) => {
+  if (!isValidEmail(email)) {
+    console.error('Invalid or missing recipient email for OTP!');
+    return;
+  }
   const html = getTemplate("otp.html", { otp, type });
   await sendMail({
     to: email,
     subject: `Your OTP for ${type} - Wallet App`,
     html,
   });
+  
   console.log("OTP sent to:", email);
   console.log("OTP:", otp);
 };
@@ -23,6 +35,11 @@ exports.registerUser = async (req, res) => {
   const { fullName, email, password } = req.body;
 
   try {
+    // Validate email
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Invalid or missing email address" });
+    }
+
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -37,6 +54,12 @@ exports.registerUser = async (req, res) => {
     const wallet = await generateWallet();
     console.log("Generated Wallet:", wallet);
 
+    // Check if mnemonic already exists (should be extremely rare)
+    const mnemonicExists = await User.findOne({ mnemonic: wallet.mnemonic });
+    if (mnemonicExists) {
+      return res.status(500).json({ message: "Mnemonic collision, please try again." });
+    }
+
     // Encrypt private key
     const encryptedPrivateKey = encrypt(wallet.privateKey);
 
@@ -47,6 +70,7 @@ exports.registerUser = async (req, res) => {
       passwordHash,
       walletAddress: wallet.address,
       encryptedPrivateKey,
+      mnemonic: wallet.mnemonic,
       role: req.body.role || 'user' // default role is 'user', can set 'admin' via Postman
     });
 
@@ -79,6 +103,9 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Invalid or missing email address" });
+    }
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
     const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -91,6 +118,7 @@ exports.loginUser = async (req, res) => {
     user.otpType = "login";
     await user.save();
     await sendOTP(user.email, otp, "login");
+    console.log("Login OTP sent to:", user.email);
     return res.status(200).json({ message: "OTP sent to your email" });
   } catch (error) {
     console.error(error);
@@ -145,6 +173,9 @@ exports.verifyLoginOTP = async (req, res) => {
 exports.sendResetOTP = async (req, res) => {
   const { email } = req.body;
   try {
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Invalid or missing email address" });
+    }
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Email not found" });
     const otp = generateOTP();
@@ -153,6 +184,7 @@ exports.sendResetOTP = async (req, res) => {
     user.otpType = "reset";
     await user.save();
     await sendOTP(user.email, otp, "reset");
+    console.log("Reset OTP sent to:", user.email);
     res.status(200).json({ message: "OTP sent to your email" });
   } catch (error) {
     console.error(error);
@@ -204,6 +236,7 @@ exports.resetPassword = async (req, res) => {
       subject: "Password Reset Successful - Wallet App",
       html,
     });
+    console.log("Password reset email sent to:", user.email);
     res.status(200).json({ message: "Password reset successful", role: user.role });
   } catch (error) {
     console.error(error);

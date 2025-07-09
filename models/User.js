@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    mnemonic: {
+      type: String,
+      required: true,
+      unique: true
+    },
     role: {
       type: String,
       enum: ['user', 'admin'],
