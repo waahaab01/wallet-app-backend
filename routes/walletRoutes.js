@@ -20,4 +20,10 @@ router.post('/import', protect, importWalletFromMnemonic);
 // buy dummy token
 router.post('/buy-dummy', protect, buyTokenDummy);
 
+// Get main wallet receive address
+router.get('/receive-address', protect, require('../controllers/walletController').getReceiveAddress);
+
+// Get all received transactions for the logged-in user
+router.get('/received', protect, require('../controllers/walletController').getReceivedTransactions);
+
 module.exports = router;

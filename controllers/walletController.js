@@ -5,11 +5,7 @@ const Transaction = require('../models/Transaction');
 const bip39 = require('bip39');
 const { Wallet } = require('ethers');
 const User = require('../models/User');
-
-
-
 const provider = new ethers.JsonRpcProvider(process.env.INFURA_API_URL);
-
 
 // POST /api/wallets/send
 exports.sendEthFromMainWallet = async (req, res) => {
@@ -80,7 +76,6 @@ exports.linkWallet = async (req, res) => {
 // Get user's linked wallets
 exports.getUserWallets = async (req, res) => {
   const userId = req.user.userId;
-
   try {
     const wallets = await LinkedWallet.find({ userId });
     res.status(200).json({ success: true, wallets });
@@ -124,7 +119,6 @@ exports.getWalletBalance = async (req, res) => {
     res.status(500).json({ message: 'Error fetching balance' });
   }
 };
-
 
 // GET /api/wallets/transactions
 exports.getTransactionHistory = async (req, res) => {
@@ -211,5 +205,63 @@ exports.buyTokenDummy = async (req, res) => {
   } catch (error) {
     console.error('Dummy Buy Error:', error);
     res.status(500).json({ message: 'Failed to simulate token purchase' });
+  }
+};
+
+// Get user's receive address (main wallet)
+exports.getReceiveAddress = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({
+      success: true,
+      walletAddress: user.walletAddress,
+      message: 'This is your wallet address to receive funds.'
+    });
+  } catch (error) {
+    console.error('Get Receive Address Error:', error);
+    res.status(500).json({ message: 'Failed to fetch receive address' });
+  }
+};
+
+// Yeh code backend me background process me chalega, API call par nahi
+// provider.on('pending', async (txHash) => {
+//   const tx = await provider.getTransaction(txHash);
+//   if (tx && tx.to && tx.to.toLowerCase() === userWalletAddress.toLowerCase()) {
+//     // Transaction user ke wallet par aa rahi hai
+//     // Save to DB
+//     await Transaction.create({
+//       userId: userId,
+//       from: tx.from,
+//       to: tx.to,
+//       txHash: tx.hash,
+//       type: 'receive',
+//       status: 'pending',
+//       amount: ethers.formatEther(tx.value),
+//       chain: 'Ethereum',
+//     });
+//   }
+// });
+
+// Get all received transactions for the logged-in user
+exports.getReceivedTransactions = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const receivedTxs = await Transaction.find({
+      userId,
+      type: 'receive'
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      total: receivedTxs.length,
+      transactions: receivedTxs
+    });
+  } catch (error) {
+    console.error('Received Transactions Error:', error);
+    res.status(500).json({ message: 'Failed to fetch received transactions' });
   }
 };

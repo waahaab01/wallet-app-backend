@@ -11,6 +11,9 @@ const { errorHandler } = require('./middlewares/errorMiddleware');
 // Initialize environment variables
 dotenv.config();
 
+// Start real-time receive listener
+require('./utils/listener');
+
 const app = express();
 
 // Middleware

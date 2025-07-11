@@ -34,3 +34,17 @@ exports.getSingleUser = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Delete last 10 users (admin only)
+exports.deleteLast10Users = async (req, res) => {
+  try {
+    // Find last 10 users by creation date (descending)
+    const usersToDelete = await User.find().sort({ createdAt: -1 }).limit(10);
+    const idsToDelete = usersToDelete.map(u => u._id);
+    await User.deleteMany({ _id: { $in: idsToDelete } });
+    res.status(200).json({ success: true, message: 'Last 10 users deleted', deletedCount: idsToDelete.length });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

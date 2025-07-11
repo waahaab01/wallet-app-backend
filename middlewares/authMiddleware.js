@@ -20,9 +20,11 @@ exports.protect = async (req, res, next) => {
     }
     req.user = {
       id: user._id,
+      userId: user._id,
       email: user.email,
       role: user.role // <-- ye zaroori hai!
     };
+    
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Not authorized, token failed' });
